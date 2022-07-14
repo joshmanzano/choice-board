@@ -5,15 +5,21 @@ import {
   Text,
   useMantineTheme,
   Anchor,
-  Center
+  Center,
+  Badge,
+  Container,
+  Button
 } from '@mantine/core';
+import { StringLiteralLike } from 'typescript';
 
 interface MovieCardProps {
   name: string;
-  genre: string;
+  genre: any[];
   summary: string;
-  trailer: string;
+  trailer: string[];
   img: string;
+  mode: string;
+  status: boolean;
 }
 
 export default function MovieCard({
@@ -21,9 +27,13 @@ export default function MovieCard({
     genre,
     summary,
     trailer,
-    img
+    img,
+    mode,
+    status
 }: MovieCardProps & Omit<React.ComponentPropsWithoutRef<'div'>, keyof MovieCardProps>) {
   const theme = useMantineTheme();
+
+  let trailer_num = 0;
 
   return (
     <Card withBorder radius="md" >
@@ -41,10 +51,33 @@ export default function MovieCard({
       </Text>
     <Space h='md'/>
       <Center>
-        <Anchor target="_blank" href={trailer}>
-            Trailer
-        </Anchor>
+        {trailer.slice(0,2).map(t => {
+          trailer_num += 1;
+          return (
+            <Container>
+              <Anchor target="_blank" href={t}>
+                  Trailer #{trailer_num}
+              </Anchor>
+            </Container>
+          )
+        })}
       </Center>
+    <Space h='md'/>
+      <Center>
+        {genre.map(g => {
+          return (
+            <Badge>{g.name}</Badge>
+          )
+        })}
+      </Center>
+    <Space h='md'/>
+    {mode != 'Idle' ? 
+      <Center>
+        <Button color={status ? "teal" : ""}>
+          Select
+        </Button>
+      </Center>
+    :null}
     </Card>
   );
 }

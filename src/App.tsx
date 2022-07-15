@@ -1,6 +1,6 @@
 import React from 'react';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, doc, addDoc, setDoc, getDocs } from 'firebase/firestore';
+import { getFirestore, collection, doc, addDoc, setDoc, getDocs, getDoc } from 'firebase/firestore';
 import { Container, Grid, Space, Anchor, Center, Input, Button, Title, Divider, LoadingOverlay} from '@mantine/core';
 import './App.css';
 import axios from 'axios';
@@ -54,10 +54,14 @@ function App() {
 
   const [loading, setLoading] = React.useState(true);
   const [movies, setMovies] = React.useState([[]]);
-  const [selectAmount, setSelectAmount] = React.useState(2);
+  const [order, setOrder] = React.useState([[]]);
+  const [choices, setChoices] = React.useState([[]]);
+  const [selectAmount, setSelectAmount] = React.useState(3);
   const [mode, setMode] = React.useState("Pick");
   const [text, setText] = React.useState("");
   const [loaded, setLoaded] = React.useState(false);
+  const debug = false;
+
 
   const re = /[0-9]+/;
 
@@ -82,18 +86,36 @@ function App() {
   }
 
   async function setMovie(id:string){
+    setLoading(true);
     try{
         const docRef = doc(db, 'movies', id);
         if(mode == 'Pick'){
           await setDoc(docRef, {
             picked: true,
-          }, {merge:true});
+          }, {merge:true}).then(() => { window.location.reload() });
         }else if(mode == 'Remove'){
           await setDoc(docRef, {
             removed: true,
-          }, {merge:true});
+          }, {merge:true}).then(() => { window.location.reload() });
         }
     } catch (e){
+      setLoading(false);
+      console.error('Error add');
+    }
+  }
+
+  async function unSetMovie(id:string, reload:boolean=true){
+    setLoading(true);
+    try{
+        const docRef = doc(db, 'movies', id);
+        if(mode == 'Pick'){
+          await setDoc(docRef, {
+            removed: false,
+            picked: false,
+          }, {merge:true}).then(() => { if(reload) {window.location.reload()} });
+        }
+    } catch (e){
+      setLoading(false);
       console.error('Error add');
     }
   }
@@ -141,13 +163,23 @@ function App() {
           movie.data().summary,
           movie.data().img,
           movie.data().picked,
-          movie.data().removed]
+          movie.data().removed,
+          movie.data().id]
         )
+        if(debug){
+          unSetMovie(movie.data().id, false);
+        }
       });
       settings.forEach((setting) => {
-        setMode(setting.data().mode)
-        setSelectAmount(setting.data().selectAmount)
+        if(!debug){
+          setMode(setting.data().mode)
+          setSelectAmount(setting.data().selectAmount)
+        }
       });
+      const people_order = await getDoc(doc(db, 'people', 'order'));
+      if(people_order.exists()){
+        setOrder(people_order.data().order);
+      }
       setMovies(array_movies);
       setLoaded(true);
       setLoading(false);
@@ -170,11 +202,18 @@ function App() {
         {mode == 'Idle' ? 
           movieInput
         :
+        <React.Fragment>
         <Center>
           <Title order={1}>
             {mode} {selectAmount} movie{selectAmount > 1 ? 's' : ''}
           </Title>
         </Center>
+        <Center>
+          <Title order={1}>
+            {order}
+          </Title>
+        </Center>
+        </React.Fragment>
         }
       </React.Fragment>
       : null
@@ -186,9 +225,9 @@ function App() {
             if(movie.length > 0){
               return (
                 <React.Fragment>
-                  {mode != 'Remove' ?
+                  {mode != 'Remove' || (movie[5] && !movie[6]) ?
                     <Grid.Col xs={4}>
-                      <MovieCard name={movie[0]} genre={movie[1]} trailer={movie[2]} summary={movie[3]} img={movie[4]} mode={mode} status={mode == 'Pick' ? movie[5] : movie[6]}/>
+                      <MovieCard name={movie[0]} genre={movie[1]} trailer={movie[2]} summary={movie[3]} img={movie[4]} mode={mode} status={mode == 'Pick' ? movie[5] : movie[6]} setMovie={setMovie} unSetMovie={unSetMovie} id={movie[7]}/>
                     </Grid.Col>
                   : null
                   }
@@ -204,13 +243,6 @@ function App() {
       </Center>
       }
       <Space h='lg'/>
-      {mode != 'Idle' ? 
-      <Center>
-        <Button size="lg">
-          Enter Choices
-        </Button>
-      </Center>
-      :null}
       <Divider my='sm'/>
       <Space h='lg'/>
       <Center>

@@ -11,6 +11,8 @@ import {
   Button
 } from '@mantine/core';
 import { StringLiteralLike } from 'typescript';
+import { confirmAlert } from 'react-confirm-alert';
+import 'react-confirm-alert/src/react-confirm-alert.css';
 
 interface MovieCardProps {
   name: string;
@@ -20,6 +22,9 @@ interface MovieCardProps {
   img: string;
   mode: string;
   status: boolean;
+  setMovie: any;
+  unSetMovie: any;
+  id: string;
 }
 
 export default function MovieCard({
@@ -29,11 +34,31 @@ export default function MovieCard({
     trailer,
     img,
     mode,
-    status
+    status,
+    setMovie,
+    unSetMovie,
+    id
 }: MovieCardProps & Omit<React.ComponentPropsWithoutRef<'div'>, keyof MovieCardProps>) {
   const theme = useMantineTheme();
 
   let trailer_num = 0;
+
+  const submit = (id: string, name: string) => {
+    confirmAlert({
+      title: 'Confirmation',
+      message: 'Confirm that you are '+(mode == 'Remove' ? 'removing' : ((status ? 'un-' : '')+'picking'))+' \"'+name+'\"?',
+      buttons: [
+        {
+          label: 'Yes',
+          onClick: () => status && mode == 'Pick' ? unSetMovie(id) : setMovie(id)
+        },
+        {
+          label: 'Cancel',
+          onClick: () => null
+        },
+      ]
+    });
+  }
 
   return (
     <Card withBorder radius="md" >
@@ -73,8 +98,8 @@ export default function MovieCard({
     <Space h='md'/>
     {mode != 'Idle' ? 
       <Center>
-        <Button color={status ? "teal" : ""}>
-          Select
+        <Button onClick={() => { submit(id, name)}} color={status && mode == 'Pick' ? "teal" : ""}>
+          {mode == 'Pick' ? status ? 'Picked' : 'Pick' : 'Remove'}
         </Button>
       </Center>
     :null}

@@ -8,7 +8,8 @@ import {
   Center,
   Badge,
   Container,
-  Button
+  Button,
+  Grid
 } from '@mantine/core';
 import { StringLiteralLike } from 'typescript';
 import { confirmAlert } from 'react-confirm-alert';
@@ -89,11 +90,15 @@ export default function MovieCard({
       </Center>
     <Space h='md'/>
       <Center>
+        <Grid>
         {genre.map(g => {
           return (
-            <Badge>{g.name}</Badge>
+            <Grid.Col xs={6}>
+              <Badge>{g.name}</Badge>
+            </Grid.Col>
           )
         })}
+        </Grid>
       </Center>
     <Space h='md'/>
     {mode != 'Idle' ? 
